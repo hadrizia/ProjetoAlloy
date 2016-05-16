@@ -1,65 +1,132 @@
 module Dropbox
 
-sig Conta{
-conta_dropbox: some DropBoxObject,
-dispositivo: set Dispositivo}
+open util/ordering[Time] as to
+sig Time {}
 
-sig DropBoxObject{}
+one sig Conta{
+	pasta_raiz: one Pasta,
+	dispositivo: set Dispositivo->Time
+}
+
+abstract sig DropBoxObject{
+}
 
 sig Pasta extends DropBoxObject{
-	conteudo: set DropBoxObject}
+	conteudo: set DropBoxObject -> Time
+}
 
-sig Arquivo extends DropBoxObject{}
+sig Arquivo extends DropBoxObject{
+	versao_atual: set Versao->Time,
+	tipo_de_permissao: set Tipo->Time
+}
 
 sig Musica extends Arquivo{}
 sig Video extends Arquivo{}
 sig Imagem extends Arquivo{}
 sig Texto extends Arquivo{}
 
-sig Dispositivo{
-tipo_de_permissao: one Tipo
+abstract sig Dispositivo{
+	tipo_de_permissao: one Tipo
 }
 
 sig Computador extends Dispositivo{}
 sig IPhone extends Dispositivo{}
 sig Android extends Dispositivo{}
 
-sig Tipo{}
-sig Leitura extends Tipo{}
-sig Escrita extends Tipo{}
-sig Leitura_e_Escrita extends Tipo{}
+abstract sig  Tipo{}
+one sig Leitura extends Tipo{}
+one sig Leitura_e_Escrita extends Tipo{}
+
+sig Versao{}
 
 fact Diretorios{
-all p: Pasta | (p !in p.^conteudo)  //&&  some p.conteudo
-all d: DropBoxObject | (d in Pasta || d in Arquivo) && lone d.~conteudo
-all p1, p2: Pasta | (p1 != p2) => p1.conteudo != p2.conteudo
 
+	all p:Pasta | some p.conteudo
+	all p: Pasta, t:Time | (p !in p.^(conteudo.t)) 
+	all d: DropBoxObject, t:Time| lone d.~(conteudo.t)
+	all p1, p2: Pasta, t:Time | (p1 != p2) => p1.conteudo.t != p2.conteudo.t
 
 }
 
-fact Permissoes{
-all p: Dispositivo| (p in Computador) || (p in IPhone) || (p in Android)
-all t:Tipo | (t in Leitura) ||  (t in Leitura_e_Escrita)
-all d:Dispositivo | (d in IPhone || d in Android) => (d.tipo_de_permissao = Leitura)
-all d:Dispositivo | (d in Computador) => (d.tipo_de_permissao = Leitura_e_Escrita)
+fact Arquivos{
+
+	all a:Arquivo, t:Time | one a.(versao_atual.t)
+	all a:Arquivo,t:Time | one a.(tipo_de_permissao.t)
+
+}
+
+fact Dispositivo{
+
+	all d:Dispositivo | (d in IPhone || d in Android) => (d.tipo_de_permissao = Leitura)
+	all d:Dispositivo | (d in Computador) => (d.tipo_de_permissao = Leitura_e_Escrita)
+
 
 }
 
 fact Conta{
-one Conta
-one Leitura_e_Escrita
-one Leitura
-
-all d:Dispositivo | d in Conta.dispositivo
-one d:Pasta | d in Conta.conta_dropbox
-all d:DropBoxObject, p:Pasta, c:Conta | (d in c.conta_dropbox) => d !in p.conteudo
-all d: DropBoxObject, c: Conta | (d in (c.conta_dropbox)) || (d in (c.conta_dropbox).^conteudo)
+	all d:Dispositivo, t:Time | d in Conta.(dispositivo.t)
 
 }
 
+fact Versao{
+	all v:Versao, t:Time| some a:Arquivo | v in (a.(versao_atual.t))
+}
+
+
+
+fact traces {
+	init [first]
+
+	all pre: Time-last | let pos = pre.next |some d:DropBoxObject, p:Pasta 
+	| adicionarConteudo[d,p,pre,pos] || removerConteudo[d,p,pre,pos]
+
+	all pre: Time-last | let pos = pre.next |some a:Arquivo, v:Versao| modificarConteudo[a,v,pre,pos]
+
+	all pre: Time-last | let pos = pre.next |some a:Arquivo, t:Tipo| modificarPermissoes[a,t,pre,pos]
+
+	--	|| removerDispositivo[d,pre,pos]
+
+}
+
+
+pred init [t: Time] {
+	no Conta.pasta_raiz.(conteudo.t)
+	one Conta.(dispositivo.t)
+
+}
+
+pred adicionarConteudo[d:DropBoxObject,p:Pasta,t,t':Time] {
+ 	d !in p.^(conteudo.t)
+	(p.conteudo).t' = (p.conteudo).t + d
+}
+
+pred removerConteudo[d:DropBoxObject,p:Pasta,t,t':Time] {
+	 d in p.^(conteudo.t)
+	(p.conteudo).t' = (p.conteudo).t - d
+}
+
+pred modificarConteudo[a:Arquivo, v:Versao, t,t':Time]{
+	v !in ((a.versao_atual).t)
+	(a.versao_atual).t' = v
+}
+
+pred modificarPermissoes[a:Arquivo, p:Tipo, t, t':Time]{
+	p !in ((a.tipo_de_permissao).t)
+	(a.tipo_de_permissao).t' = p
+	
+}
+
+pred adicionarDispositivo[d:Dispositivo, t,t':Time]{
+	d !in Conta.(dispositivo.t)
+	(Conta.dispositivo).t'= (Conta.dispositivo).t + d
+}
+
+pred removerDispositivo[d:Dispositivo, t,t':Time]{
+	d in Conta.(dispositivo.t)
+	(Conta.dispositivo).t'= (Conta.dispositivo).t - d
+}
 
 pred show[]{
-#Dispositivo = 2
 }
 
-run show for 5
+run show for 6
