@@ -43,18 +43,19 @@ sig Versao{}
 
 fact Diretorios{
 
-	all p:Pasta | some p.conteudo
+	all p:Pasta,t:Time | some p.(conteudo.t)
 	all p: Pasta, t:Time | (p !in p.^(conteudo.t)) 
 	all p1, p2: Pasta, t:Time | (p1 != p2) => p1.(conteudo.t) != p2.(conteudo.t)
+
+	all d:DropBoxObject , t:Time | lone d.~(conteudo.t)
 
 }
 
 fact Arquivos{
 
 	all a:Arquivo, t:Time | one a.(versao_atual.t)
-	all a:Arquivo,t:Time | one a.(tipo_de_permissao.t)
+	all a:Arquivo,t:Time  | one a.(tipo_de_permissao.t)
 	all a:Arquivo, t:Time | some p:Pasta | a in p.(conteudo.t)
-
 }
 
 fact Dispositivo{
@@ -62,18 +63,17 @@ fact Dispositivo{
 	all d:Dispositivo | (d in IPhone || d in Android) => (d.tipo_de_permissao = Leitura)
 	all d:Dispositivo | (d in Computador) => (d.tipo_de_permissao = Leitura_e_Escrita)
 
+	all d:Dispositivo, t: Time-last | some c:Conta | (d !in c.(dispositivo.t)) => adicionarDispositivo[d,t,t.next]
+
 }
 
 fact Conta{
-
-	all d:Dispositivo, t:Time | d in Conta.(dispositivo.t)
 	all p:Pasta, t:Time | p in Conta.pasta_raiz || p in (Conta.pasta_raiz).^(conteudo.t)
 }
 
 fact Versao{
 	all v:Versao, t:Time| some a:Arquivo | v in (a.(versao_atual.t))
 }
-
 
 
 fact traces {
@@ -86,15 +86,16 @@ fact traces {
 
 	all pre: Time-last | let pos = pre.next |some a:Arquivo, t:Tipo| modificarPermissoes[a,t,pre,pos]
 
+	all pre:Time-last | let pos = pre.next |some d:Dispositivo| adicionarDispositivo[d,pre,pos]
+		|| removerDispositivo[d,pre,pos]
 
 }
 
 ---- PREDICADOS 
 
 pred init [t: Time] {
-	one Conta.pasta_raiz.(conteudo.t)
-	one Conta.(dispositivo.t)
-
+	one (Conta.pasta_raiz.conteudo).t
+	one (Conta.dispositivo).t
 }
 
 pred adicionarConteudo[d:DropBoxObject,p:Pasta,t,t':Time] {
