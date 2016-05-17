@@ -53,7 +53,7 @@ fact Arquivos{
 
 	all a:Arquivo, t:Time | one a.(versao_atual.t)
 	all a:Arquivo,t:Time | one a.(tipo_de_permissao.t)
---	all a:Arquivo, t: Time | some p:Pasta | a in p.^(conteudo.t)
+	all a:Arquivo, t:Time | some p:Pasta | a in p.(conteudo.t)
 
 }
 
@@ -86,14 +86,13 @@ fact traces {
 
 	all pre: Time-last | let pos = pre.next |some a:Arquivo, t:Tipo| modificarPermissoes[a,t,pre,pos]
 
-		--|| removerDispositivo[d,pre,pos]
 
 }
 
 ---- PREDICADOS 
 
 pred init [t: Time] {
-	no Conta.pasta_raiz.(conteudo.t)
+	one Conta.pasta_raiz.(conteudo.t)
 	one Conta.(dispositivo.t)
 
 }
