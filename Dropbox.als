@@ -134,10 +134,14 @@ pred removerDispositivo[d:Dispositivo, t,t':Time]{
 assert todaContaTemPeloMenosUmDispositivo{
 	all c:Conta | some c.dispositivo
 }
+assert todaContaTemUmaPastaRaiz{
+	all c:Conta | one c.pasta_raiz 
+}
 
 -------- CHECKS
 
 check todaContaTemPeloMenosUmDispositivo for 6
+check todaContaTemUmaPastaRaiz for 6
 
 ------ RUN SHOW
 
