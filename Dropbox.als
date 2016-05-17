@@ -137,7 +137,7 @@ assert todaContaTemPeloMenosUmDispositivo{
 
 -------- CHECKS
 
-//check todaContaTemPeloMenosUmDispositivo for 6
+check todaContaTemPeloMenosUmDispositivo for 6
 
 ------ RUN SHOW
 
