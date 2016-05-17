@@ -15,7 +15,7 @@ sig Pasta extends DropBoxObject{
 	conteudo: set DropBoxObject -> Time
 }
 
-sig Arquivo extends DropBoxObject{
+abstract sig Arquivo extends DropBoxObject{
 	versao_atual: set Versao->Time,
 	tipo_de_permissao: set Tipo->Time
 }
@@ -45,8 +45,7 @@ fact Diretorios{
 
 	all p:Pasta | some p.conteudo
 	all p: Pasta, t:Time | (p !in p.^(conteudo.t)) 
-	all d: DropBoxObject, t:Time| lone d.~(conteudo.t)
-	all p1, p2: Pasta, t:Time | (p1 != p2) => p1.conteudo.t != p2.conteudo.t
+	all p1, p2: Pasta, t:Time | (p1 != p2) => p1.(conteudo.t) != p2.(conteudo.t)
 
 }
 
@@ -54,6 +53,7 @@ fact Arquivos{
 
 	all a:Arquivo, t:Time | one a.(versao_atual.t)
 	all a:Arquivo,t:Time | one a.(tipo_de_permissao.t)
+--	all a:Arquivo, t: Time | some p:Pasta | a in p.^(conteudo.t)
 
 }
 
@@ -62,12 +62,12 @@ fact Dispositivo{
 	all d:Dispositivo | (d in IPhone || d in Android) => (d.tipo_de_permissao = Leitura)
 	all d:Dispositivo | (d in Computador) => (d.tipo_de_permissao = Leitura_e_Escrita)
 
-
 }
 
 fact Conta{
-	all d:Dispositivo, t:Time | d in Conta.(dispositivo.t)
 
+	all d:Dispositivo, t:Time | d in Conta.(dispositivo.t)
+	all p:Pasta, t:Time | p in Conta.pasta_raiz || p in (Conta.pasta_raiz).^(conteudo.t)
 }
 
 fact Versao{
@@ -86,7 +86,7 @@ fact traces {
 
 	all pre: Time-last | let pos = pre.next |some a:Arquivo, t:Tipo| modificarPermissoes[a,t,pre,pos]
 
-	--	|| removerDispositivo[d,pre,pos]
+		--|| removerDispositivo[d,pre,pos]
 
 }
 
@@ -137,7 +137,7 @@ assert todaContaTemPeloMenosUmDispositivo{
 
 -------- CHECKS
 
-check todaContaTemPeloMenosUmDispositivo for 6
+//check todaContaTemPeloMenosUmDispositivo for 6
 
 ------ RUN SHOW
 
