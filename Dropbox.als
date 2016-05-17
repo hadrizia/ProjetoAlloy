@@ -39,6 +39,8 @@ one sig Leitura_e_Escrita extends Tipo{}
 
 sig Versao{}
 
+--------- FACTS
+
 fact Diretorios{
 
 	all p:Pasta | some p.conteudo
@@ -88,6 +90,7 @@ fact traces {
 
 }
 
+---- PREDICADOS 
 
 pred init [t: Time] {
 	no Conta.pasta_raiz.(conteudo.t)
@@ -125,6 +128,18 @@ pred removerDispositivo[d:Dispositivo, t,t':Time]{
 	d in Conta.(dispositivo.t)
 	(Conta.dispositivo).t'= (Conta.dispositivo).t - d
 }
+
+ ------- ASSERTS 
+
+assert todaContaTemPeloMenosUmDispositivo{
+	all c:Conta | some c.dispositivo
+}
+
+-------- CHECKS
+
+check todaContaTemPeloMenosUmDispositivo for 6
+
+------ RUN SHOW
 
 pred show[]{
 }
