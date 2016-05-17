@@ -134,14 +134,31 @@ pred removerDispositivo[d:Dispositivo, t,t':Time]{
 assert todaContaTemPeloMenosUmDispositivo{
 	all c:Conta | some c.dispositivo
 }
+
 assert todaContaTemUmaPastaRaiz{
 	all c:Conta | one c.pasta_raiz 
+}
+
+assert todaContaRaizTemAlgumConteudo{
+	some Conta.pasta_raiz.conteudo
+}
+
+assert todoConteudoEhPastaOuArquivo{
+	all p:Pasta, t:Time | p.(conteudo.t) in  Pasta || p.(conteudo.t)  in Arquivo
+}
+
+assert todoArquivoTemVersaoAtualEPermissao{
+all a:Arquivo | one a.versao_atual &&  one a.tipo_de_permissao
 }
 
 -------- CHECKS
 
 check todaContaTemPeloMenosUmDispositivo for 6
 check todaContaTemUmaPastaRaiz for 6
+check  todaContaRaizTemAlgumConteudo for 6
+check todoConteudoEhPastaOuArquivo for 6
+check todoArquivoTemVersaoAtualEPermissao for 6
+
 
 ------ RUN SHOW
 
